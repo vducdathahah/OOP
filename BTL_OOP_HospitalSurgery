@@ -1,0 +1,215 @@
+from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional
+
+
+class Person(ABC):
+
+    def __init__(self, person_id: str, name: str):
+        self.id = person_id
+        self.name = name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(ID={self.id}, Name='{self.name}')"
+
+class Patient(Person):
+    def __init__(self, person_id: str, name: str, diagnosis: str):
+        super().__init__(person_id, name)
+        self.diagnosis = diagnosis
+
+class Doctor(Person):
+
+    def __init__(self, person_id: str, name: str, specialty: str):
+        super().__init__(person_id, name)
+        self.specialty = specialty
+
+class Nurse(Person):
+
+    def __init__(self, person_id: str, name: str):
+        super().__init__(person_id, name)
+        self.care_logs: List[str] = []
+
+    def record_care(self, surgery_id: str, notes: str):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"[{timestamp}] Ca mổ {surgery_id}: {notes}"
+        self.care_logs.append(log_entry)
+        print(f"[Y tá {self.name}] Ghi nhận: {notes}")
+
+class Technician(Person):
+    """Thực thể Kỹ thuật viên vận hành thiết bị phòng mổ."""
+    def __init__(self, person_id: str, name: str, equipment_skill: str):
+        super().__init__(person_id, name)
+        self.equipment_skill = equipment_skill
+
+
+class SurgeryState(ABC):
+   
+    @abstractmethod
+    def next(self, surgery) -> None:
+        pass
+
+    @abstractmethod
+    def __str__(self) -> str:
+        pass
+
+class PendingState(SurgeryState):
+    def next(self, surgery) -> None:
+        if surgery.room and surgery.start_time:
+            surgery.set_state(ScheduledState())
+        else:
+            raise ValueError("Không thể chuyển sang trạng thái Scheduled mà chưa có phòng và thời gian!")
+    def __str__(self) -> str: return "Pending (Chờ duyệt/Xếp lịch)"
+
+class ScheduledState(SurgeryState):
+    def next(self, surgery) -> None:
+        if len(surgery.team) >= 3: # Phải có tối thiểu Bác sĩ, Y tá, KTV
+            surgery.set_state(InProgressState())
+        else:
+            raise ValueError("Đội ngũ y tế chưa đủ ban bệ phẫu thuật!")
+    def __str__(self) -> str: return "Scheduled (Đã xếp lịch)"
+
+class InProgressState(SurgeryState):
+    def next(self, surgery) -> None:
+        surgery.set_state(RecoveryState())
+    def __str__(self) -> str: return "InProgress (Đang phẫu thuật)"
+
+class RecoveryState(SurgeryState):
+    def next(self, surgery) -> None:
+        surgery.set_state(DischargedState())
+    def __str__(self) -> str: return "Recovery (Đang hồi tỉnh/Hồi sức)"
+
+class DischargedState(SurgeryState):
+    def next(self, surgery) -> None:
+        print("[Thông báo] Ca mổ đã kết thúc trọn vẹn, bệnh nhân đã chuyển khoa/xuất viện.")
+    def __str__(self) -> str: return "Discharged (Đã xuất viện/Chuyển khoa)"
+
+
+class OperatingRoom:
+
+    def __init__(self, room_id: str, name: str, allowed_types: List[str]):
+        self.id = room_id
+        self.name = name
+        self.allowed_types = allowed_types
+        self.booked_slots: List[datetime] = []  # Lưu thời gian các ca mổ đã đặt chỗ
+
+    def is_available(self, time_slot: datetime) -> bool:
+        # Giả định một ca phẫu thuật tiêu chuẩn kéo dài trong 2 tiếng
+        for slot in self.booked_slots:
+            if abs(slot - time_slot) < timedelta(hours=2):
+                return False
+        return True
+
+
+class Surgery:
+   
+    def __init__(self, surgery_id: str, patient: Patient, surgery_type: str, priority: str, required_supplies: Dict[str, int]):
+        self.id = surgery_id
+        self.patient = patient
+        self.type = surgery_type
+        self.priority = priority  # "Khẩn cấp" hoặc "Thường"
+        self.required_supplies = required_supplies
+        self.room: Optional[OperatingRoom] = None
+        self.start_time: Optional[datetime] = None
+        self.team: List[Person] = []
+        self.post_op_orders: List[str] = []
+        self._state: SurgeryState = PendingState()
+
+    def set_state(self, state: SurgeryState):
+        print(f"[Ca mổ {self.id}] Chuyển trạng thái: {self._state} -> {state}")
+        self._state = state
+
+    def get_status(self) -> str:
+        return str(self._state)
+
+    def advance_stage(self):
+        """Kích hoạt chuyển đổi trạng thái tiếp theo dựa trên logic nghiệp vụ."""
+        self._state.next(self)
+
+    def assign_staff(self, staff: Person):
+        self.team.append(staff)
+        print(f"[Phân công] Đã thêm thành viên {staff.name} vào ca mổ {self.id}")
+
+    def add_order(self, order_text: str):
+        self.post_op_orders.append(order_text)
+        print(f"[Y lệnh Bác sĩ] Thêm y lệnh hậu phẫu: {order_text}")
+
+
+class HospitalSystem:
+
+    def __init__(self):
+        self.rooms: List[OperatingRoom] = []
+        self.inventory: Dict[str, int] = {}
+        self.surgeries: List[Surgery] = []
+
+    def add_operating_room(self, room: OperatingRoom):
+        self.rooms.append(room)
+
+    def restock_supplies(self, supply_name: str, qty: int):
+        self.inventory[supply_name] = self.inventory.get(supply_name, 0) + qty
+
+    def receive_medical_record(self, surgery: Surgery) -> bool:
+      
+        print(f"\n[Hệ thống] Tiếp nhận bệnh án ca mổ {surgery.id} ({surgery.patient.name})")
+        for item, required_qty in surgery.required_supplies.items():
+            if self.inventory.get(item, 0) < required_qty:
+                print(f"[-] DUYỆT THẤT BẠI: Thiếu vật tư y tế khẩn cấp: {item} (Cần: {required_qty}, Hiện có: {self.inventory.get(item, 0)})")
+                return False
+       
+        for item, required_qty in surgery.required_supplies.items():
+            self.inventory[item] -= required_qty
+        
+        self.surgeries.append(surgery)
+        print(f"[+] DUYỆT THÀNH CÔNG: Đã chuẩn bị đủ vật tư cho ca mổ {surgery.id}.")
+        return True
+
+    def auto_schedule(self, target_date: datetime):
+  
+        print(f"\n[Thuật toán] Bắt đầu tự động tối ưu xếp lịch phẫu thuật cho ngày {target_date.date()}...")
+        
+     
+        pending = [s for s in self.surgeries if s.get_status() == "Pending (Chờ duyệt/Xếp lịch)"]
+        pending.sort(key=lambda s: 0 if s.priority == "Khẩn cấp" else 1)
+
+        current_time_slot = target_date
+
+        for surgery in pending:
+            scheduled_success = False
+            for room in self.rooms:
+               
+                if surgery.type in room.allowed_types and room.is_available(current_time_slot):
+                    surgery.room = room
+                    surgery.start_time = current_time_slot
+                    room.booked_slots.append(current_time_slot)
+                    
+                 
+                    surgery.advance_stage()
+                    scheduled_success = True
+                    print(f"[🗲] Xếp lịch tự động: Ca mổ {surgery.id} xếp vào [{room.name}] lúc {current_time_slot.strftime('%H:%M')}")
+                    
+                   
+                    current_time_slot += timedelta(hours=2)
+                    break
+            
+            if not scheduled_success:
+                print(f"[-] Cảnh báo: Không tìm thấy phòng trống phù hợp cấu hình cho ca mổ {surgery.id}")
+
+    def generate_weekly_report(self):
+      
+        print("\n" + "="*55)
+        print("     BÁO CÁO THỐNG KÊ CHI TIẾT PHÒNG MỔ TRONG TUẦN")
+        print("="*55)
+        print(f"Tổng số ca mổ tiếp nhận: {len(self.surgeries)}")
+        
+        status_counts = {}
+        for s in self.surgeries:
+            status_counts[s.get_status()] = status_counts.get(s.get_status(), 0) + 1
+        
+        print("\n--- Phân bổ trạng thái hiện tại ---")
+        for status, count in status_counts.items():
+            print(f" • {status}: {count} ca")
+            
+        print("\n--- KPI Hiệu suất sử dụng phòng mổ ---")
+        for room in self.rooms:
+            utilization_hours = len(room.booked_slots) * 2
+            print(f" • {room.name}: Đã hoạt động {utilization_hours} giờ phẫu thuật trong tuần.")
+        print("="*55 + "\n")
