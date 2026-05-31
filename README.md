@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🏥 Hospital Surgery Scheduling Management System (HSSMS)
-### ⚡ Hệ thống Quản lý và Xếp lịch Phẫu thuật Bệnh viện — Nhóm 10
+### ⚡ Hệ thống Quản lý và Xếp lịch Phẫu thuật Bệnh viện — Bài 10
 
 <p>
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" />
@@ -19,7 +19,7 @@
 
 ---
 
-## 👨‍💻 Đội ngũ Phát triển — MedTech Team (Nhóm 10)
+## 👨‍💻 Đội ngũ Phát triển — MedTech Team
 
 Hệ thống được thiết kế, xây dựng và vận hành bởi các thành viên:
 
@@ -48,4 +48,6 @@ Hệ thống cung cấp giải pháp chuyển đổi số toàn diện qua 7 ph�
 
 1. **📋 Tiếp nhận Bệnh án & Duyệt Vật tư:** Hỗ trợ điều dưỡng khởi tạo ca phẫu thuật từ bệnh án. Bộ phận vật tư kiểm kho thuốc, thiết bị tiêu hao; nếu đủ điều kiện hệ thống sẽ phê duyệt ca mổ vào hàng đợi.
 2. **📅 Thuật toán Xếp lịch Tự động:** Tự động quét lịch trống của các phòng mổ chuyên dụng, ưu tiên đẩy các ca thuộc diện **Khẩn cấp (Emergency)** lên đầu và xếp khung giờ tối ưu cho ca thường.
-3. **👨‍⚕️ Điều phối Kíp mổ & Tránh xung đột:** Tự động ràng buộc cấu trúc kíp mổ (1 Bác sĩ chính, Y tá, Kỹ thuật viên) và đưa ra cảnh báo chặn
+3. **👨‍⚕️ Điều phối Kíp mổ & Tránh xung đột:** Tự động ràng buộc cấu trúc kíp mổ (1 Bác sĩ chính, Y tá, Kỹ thuật viên) và đưa ra cảnh báo chặn ngay lập tức nếu nhân sự bị trùng lịch ở phòng mổ khác.
+4. **🔄 State Machine điều phối ca mổ:** Cho phép Điều dưỡng trưởng cập nhật trạng thái ca mổ theo thời gian thực: *Chờ duyệt ➔ Đã xếp lịch ➔ Đang mổ ➔ Phòng hồi tỉnh ➔ Xuất viện*.
+5. **📝 Ghi Y lệnh Hậu phẫu:** Bác sĩ chính nhập báo cáo kết quả ca phẫu thuật, cập nhật ghi
