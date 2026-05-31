@@ -42,14 +42,7 @@ Yêu cầu hệ thống: Cài đặt sẵn Python 3.x trên máy tính.
 ```bash
 git clone [https://github.com/vducdatahah/OOP.git](https://github.com/vducdatahah/OOP.git)
 cd OOP
-Bước 2: Tạo và kích hoạt môi trường ảo (Virtual Environment)
-# Tạo môi trường ảo
-python -m venv venv
 
-# Kích hoạt (Trên Windows)
-venv\Scripts\activate
-
-# Kích hoạt (Trên macOS/Linux)
 source venv/bin/activate
 Bước 3: Cài đặt thư viện
 pip install -r requirements.txt
