@@ -1,40 +1,44 @@
-# BÀI TẬP LỚN LẬP TRÌNH HƯỚNG ĐỐI TƯỢNG (OOP)
-## ĐỀ TÀI 10: HỆ THỐNG QUẢN LÝ LỊCH PHẪU THUẬT BỆNH VIỆN
-
-[cite_start]Hệ thống quản lý và tối ưu hóa lịch phẫu thuật tại bệnh viện, hỗ trợ đắc lực cho điều dưỡng trưởng phòng mổ trong công tác quản lý vật tư, điều phối nhân lực và theo dõi sát sao tình trạng bệnh nhân.
-
----
-
-## 1. Giới thiệu thành viên nhóm
-
-Dưới đây là danh sách thành viên thực hiện dự án (Vui lòng cập nhật đúng thông tin cá nhân):
-
-| STT | Họ và tên | Mã số sinh viên (MSSV) | Vai trò / Nhiệm vụ đảm nhiệm |
-|---|---|---|---|
-| 1 | [Sinh viên mẫu A] | [MSSV_01] | *Nhóm trưởng* - Thiết kế kiến trúc, Dịch vụ xếp lịch Core (Scheduler) |
-| 2 | [Sinh viên mẫu B] | [MSSV_02] | [cite_start]Phát triển phân hệ Nhân sự (Person, Doctor, Nurse,...) [cite: 570] |
-| 3 | [Sinh viên mẫu C] | [MSSV_03] | [cite_start]Quản lý vòng đời ca mổ (Surgery, State Pattern) [cite: 571, 572] |
-| 4 | [Sinh viên mẫu D] | [MSSV_04] | [cite_start]Thiết kế quản lý vật tư (OperatingRoom, Inventory) & Xuất báo cáo [cite: 569, 571] |
+# 🏥 BTL.10 - HỆ THỐNG QUẢN LÝ LỊCH PHẪU THUẬT BỆNH VIỆN
+> **Bài tập lớn môn:** Lập trình Hướng đối tượng (OOP)  
+> **Ngôn ngữ & Framework:** Python 3.x, Flask, SQLite (SQLAlchemy), Bootstrap 5
 
 ---
 
-## 2. Cấu trúc thư mục nguồn (Project Structure)
+## 📖 I. MÔ TẢ BÀI TOÁN (Problem Description)
+Hệ thống giải quyết bài toán luân chuyển và điều phối quy trình phẫu thuật tại bệnh viện một cách khép kín:
+1. **Tiếp nhận & Chuẩn bị:** Khi có bệnh án cần phẫu thuật, hồ sơ được đưa vào hệ thống. Phòng vật tư tiến hành kiểm tra kho – nếu đáp ứng đủ điều kiện vật tư thì mới tiến hành xếp lịch.
+2. **Logic xếp lịch:** Lịch mổ được hệ thống tính toán dựa trên 3 yếu tố: sự sẵn sàng của phòng mổ, độ ưu tiên (Ca khẩn cấp > Ca thường), và loại bệnh lý phải phù hợp với tiêu chuẩn của phòng mổ đó.
+3. **Thực hiện phẫu thuật:** Mỗi ca mổ được phân công một kíp trực tiêu chuẩn bao gồm: 1 Bác sĩ chính, Y tá và Kỹ thuật viên.
+4. **Hậu phẫu:** Sau phẫu thuật, bệnh nhân tuần tự được chuyển sang phòng Hồi tỉnh $\rightarrow$ Hồi sức $\rightarrow$ Chuyển khoa. Bác sĩ và y tá tiến hành ghi y lệnh và theo dõi chăm sóc liên tục trên hệ thống.
 
-[cite_start]Project được phân tách module rõ ràng theo nguyên lý thiết kế hướng đối tượng, giúp dễ dàng bảo trì và mở rộng[cite: 570, 571]:
+---
 
-```text
- hospital_scheduler/
- │
- ├── main.py                  # Điểm chạy chính của chương trình (Kịch bản mô phỏng)
- └── app/
-     ├── _init_.py
-     │
-     ├── models/              # Chứa các lớp định nghĩa thực thể dữ liệu
-     │   ├── _init_.py
-     │   ├── person.py        # Quản lý lớp trừu tượng Person, Patient, Doctor, Nurse, Tech [cite: 570]
-     │   ├── room_supply.py   # Định nghĩa Phòng mổ (OperatingRoom) và Vật tư y tế [cite: 571]
-     │   └── surgery.py       # Quản lý thông tin ca mổ và trạng thái ca mổ (State Pattern) [cite: 571, 572]
-     │
-     └── services/            # Chứa các lớp xử lý logic nghiệp vụ
-         ├── _init_.py
-         └── scheduler.py     # Bộ điều phối tự động kiểm tra kho vật tư & xếp lịch mổ [cite: 569, 572]
+## ⚙️ II. TÍNH NĂNG CHÍNH (Core Use Cases)
+Hệ thống được thiết kế để đáp ứng tối thiểu 7 Use Case nghiệp vụ chính:
+1. **Tiếp nhận bệnh án & Duyệt vật tư:** Xử lý hồ sơ đầu vào và xác nhận điều kiện y tế.
+2. **Xếp lịch tự động:** Phân bổ thời gian dựa theo phòng và mức độ ưu tiên của bệnh nhân.
+3. **Phân công đội ngũ y tế:** Chỉ định Bác sĩ, Y tá, Kỹ thuật viên cho từng ca mổ cụ thể.
+4. **Cập nhật trạng thái ca mổ:** Quản lý vòng đời ca mổ (Chờ mổ $\rightarrow$ Đang mổ $\rightarrow$ Hồi tỉnh $\rightarrow$ Hồi sức $\rightarrow$ Chuyển khoa).
+5. **Ghi y lệnh hậu phẫu:** Hỗ trợ bác sĩ kê đơn và chỉ định sau mổ.
+6. **Ghi nhận chăm sóc bệnh nhân:** Y tá cập nhật tình trạng sinh tồn và quá trình chăm sóc.
+7. **Báo cáo & Thống kê:** Xuất báo cáo danh sách ca mổ trong tuần và tính toán KPI hiệu suất của từng phòng mổ.
+
+---
+
+## 🛠️ III. KIẾN TRÚC & ÁP DỤNG OOP
+Dự án áp dụng chặt chẽ các nguyên lý Lập trình Hướng đối tượng (OOP) và Design Pattern:
+
+### 1. Kiến trúc Lớp (Classes & Inheritance)
+- `Person` *(Abstract Class)*: Lớp cơ sở chứa thông tin định danh (`id`, `name`).
+  - **Kế thừa:** Các lớp `Patient` (Bệnh nhân), `Doctor` (Bác sĩ), `Nurse` (Y tá), `Technician` (KTV) đều kế thừa từ `Person`.
+- `Surgery` (Ca phẫu thuật): Lớp trung tâm quản lý dữ liệu ca mổ với các thuộc tính: `id`, `patient`, `type`, `priority`, `room`, `start_time`, `status`, `team[]`.
+- `OperatingRoom` (Phòng mổ): Thuộc tính `id`, `name`, `allowed_types[]` (loại phẫu thuật được phép).
+- `MedicalSupply` (Vật tư y tế): Thuộc tính `name`, `quantity`.
+
+### 2. Design Pattern (State Pattern)
+Sử dụng State Pattern để quản lý trạng thái luân chuyển phức tạp của một ca phẫu thuật, tránh sử dụng if/else lồng nhau:
+- Abstract Class: `SurgeryState`
+- Các Concrete States kế thừa: `Pending` (Chờ) $\rightarrow$ `Scheduled` (Đã xếp lịch) $\rightarrow$ `InProgress` (Đang mổ) $\rightarrow$ `Recovery` (Hồi sức) $\rightarrow$ `Discharged` (Xuất viện/Chuyển khoa).
+
+### 3. Lớp Dịch vụ (Services)
+- `Scheduler`: Lớp xử lý nghiệp vụ xếp lịch với logic kiểm tra ràng buộc khắt khe thông qua phương thức `assign(
